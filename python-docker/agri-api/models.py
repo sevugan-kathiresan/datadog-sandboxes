@@ -1,5 +1,5 @@
 # SQL Alchemy model definitions need to match with our table definitions
-from sqlalchemy import (Integer, String, Date, BigInteger, Numeric, DateTime, ForeignKey)
+from sqlalchemy import (Integer, String, Date, Numeric, DateTime, ForeignKey, func)
 from sqlalchemy.orm import (relationship, DeclarativeBase, Mapped, mapped_column)
 from datetime import datetime, date
 
@@ -21,7 +21,7 @@ class HubReading(Base):
     __tablename__ = "hubreadings"
     reading_id: Mapped[int] = mapped_column(primary_key=True, index=True)
     hub_id: Mapped[int] = mapped_column(Integer, ForeignKey("hubs.hub_id"), nullable=False)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     temperature: Mapped[float] = mapped_column(Numeric(10,2), nullable=False)
     humidity: Mapped[float] = mapped_column(Numeric(10,2), nullable=False)
     soil_moisture: Mapped[float] = mapped_column(Numeric(10,2), nullable=False)
