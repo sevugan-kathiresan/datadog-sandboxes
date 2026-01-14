@@ -85,6 +85,45 @@ async def ingest_reading(payload: ReadingIn, db: AsyncSession = Depends(get_db))
         logger.error("SQL Alchemy error happened: %s", error_message)
 
         raise HTTPException(status_code=500, detail="Internal Server Error Happened while processing the Hub") from e
+    
+    #Step 2 - Create the reading and store it in the DB
+    reading = HubReading(
+        hub_id = hub.hub_id,
+        timestamp = payload.timestamp,
+        temperature=payload.temperature,
+        humidity=payload.humidity,
+        soil_moisture=payload.soil_moisture
+    )
+
+    db.add(reading)
+
+    try:
+        await db.commit()
+        await db.refresh(reading)
+
+    except IntegrityError as e:
+        error_message = str(e.orig) if e.orif  else str(e)
+        logger.error("IntegrityError while creating Reading: %s", error_message)
+
+        raise HTTPException(status_code=400, detail="Hub already exists or violates a database constraint") from e
+    
+    except SQLAlchemyError as e:
+        error_message = str(e)
+        logger.error("SQL Alchemy error happened: %s", error_message)
+
+        raise HTTPException(status_code=500, detail="Internal Server Error Happened while processing the Reading value") from e
+    
+    #Build and return the Output
+    return ReadingOut(
+        reading_id=reading.reading_id,
+        hub_serial_number=hub.serial_number,
+        timestamp=reading.timestamp,
+        temperature=reading.temperature,
+        humidity=reading.humidity,
+        soil_moisture=reading.soil_moisture
+    )
+
+
 
 
         
