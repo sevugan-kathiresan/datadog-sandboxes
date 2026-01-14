@@ -10,7 +10,7 @@ from ..schemas import ReadingIn, ReadingOut
 from ..models import Hub, HubReading
 
 #Instanticate the logger
-logger = logging.getLogger(__name__) #__name__ corresponds to the respective module name likea place holder
+logger = logging.getLogger(__name__) #__name__ corresponds to the respective module name like a place holder
 
 
 
