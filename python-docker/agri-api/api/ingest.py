@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy import select
 from datetime import datetime
 import logging
 
@@ -72,7 +73,7 @@ router = APIRouter()
 async def ingest_reading(payload: ReadingIn, db: AsyncSession = Depends(get_db)):
     # Step 1 - Get or create the HUB for this Serial number
     try:
-        hub = await get_or_create_hub(payload.serial_number)
+        hub = await get_or_create_hub(payload.serial_number, db)
     
     except IntegrityError as e:
         error_message = str(e.orig) if e.orif  else str(e)
