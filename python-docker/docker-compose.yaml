@@ -1,0 +1,53 @@
+services:
+  agri-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  agri-api:
+    build:
+      context: ./agri-api
+    restart: unless-stopped
+    env_file:
+      - ./agri-api/.env
+    environment:
+      - DD_AGENT_HOST=datadog-agent # points to datadog agent service to send traces
+    depends_on:
+      agri-db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  datadog-agent:
+    build: datadog
+    pid: host # Essential to monitor the underlying host
+    cgroup: host # Essential to monitor the underlying host
+    container_name: datadog-agent
+    environment:
+      - DD_API_KEY=${MY_DD_SANDBOX_API_KEY}
+      - DD_SITE=${MY_DD_SANDBOX_SITE}
+      - DD_HOSTNAME=python-docker-sandbox
+      - DD_APM_ENABLED=true # enables tracing
+      - DD_APM_NON_LOCAL_TRAFFIC=true # enables agent to receive traces from other containers
+      - DD_LOGS_ENABLED=true
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true # allows agent to collect logs from all the containers that it can see
+      #- DD_CONTAINER_EXCLUDE=name:datadog-agent # prevent datadog agent from monitoring itself especially useful in the context of logs collection
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+
+volumes:
+  pgdata:
